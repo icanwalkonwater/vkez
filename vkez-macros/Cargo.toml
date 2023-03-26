@@ -1,0 +1,16 @@
+[package]
+name = "vkez-macros"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro-error = "1.0.4"
+proc-macro2 = "1.0.53"
+quote = "1.0.26"
+shaderc = "0.8.2"
+spirv-reflect = "0.2.3"
+structmeta = "0.2.0"
+syn = { version = "2.0.10", features = ["full"] }
