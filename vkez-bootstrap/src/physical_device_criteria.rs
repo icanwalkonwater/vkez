@@ -1,8 +1,7 @@
 use std::{borrow::Cow, ffi::CStr};
 
 use ash::vk;
-use vkez_core::ash;
-use vkez_core::tracing;
+use vkez_core::{ash, tracing};
 
 use super::QueueFamilyRequest;
 
@@ -36,8 +35,7 @@ impl<'crit> PhysicalDeviceCriteria<'crit> {
     }
 
     pub fn request_queue_family<'a: 'crit>(
-        mut self,
-        queue: impl Into<Cow<'a, QueueFamilyRequest>>,
+        mut self, queue: impl Into<Cow<'a, QueueFamilyRequest>>,
     ) -> Self {
         self.queue_families.push(queue.into());
         self
@@ -53,14 +51,13 @@ impl<'crit> PhysicalDeviceCriteria<'crit> {
         self
     }
 
-    // pub fn prefer_extension<'a: 'crit>(mut self, name: impl Into<Cow<'a, CStr>>) -> Self {
-    //     self.prefered_extensions.push(name.into());
+    // pub fn prefer_extension<'a: 'crit>(mut self, name: impl Into<Cow<'a, CStr>>)
+    // -> Self {     self.prefered_extensions.push(name.into());
     //     self
     // }
 
     pub fn pick_physical_device(
-        &self,
-        devices: impl Iterator<Item = PhysicalDeviceMetadata>,
+        &self, devices: impl Iterator<Item = PhysicalDeviceMetadata>,
     ) -> Option<PhysicalDeviceMetadata> {
         let devices = devices.inspect(|device| tracing::trace!("{:?}", device));
 

@@ -84,8 +84,7 @@ impl<'builder> InstanceBuilder<'builder> {
 
     #[inline]
     pub unsafe fn create_instance(
-        self,
-        entry: impl Borrow<ash::Entry>,
+        self, entry: impl Borrow<ash::Entry>,
     ) -> ash::prelude::VkResult<(
         ash::Instance,
         Option<(ash::extensions::ext::DebugUtils, vk::DebugUtilsMessengerEXT)>,

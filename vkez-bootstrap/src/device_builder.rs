@@ -1,8 +1,7 @@
 use std::borrow::Borrow;
 
 use ash::vk;
-use vkez_core::ash;
-use vkez_core::tracing;
+use vkez_core::{ash, tracing};
 
 use super::{PhysicalDeviceCriteria, PhysicalDeviceMetadata, QueueFamilyRequest};
 
@@ -13,16 +12,14 @@ pub struct DeviceBuilder<'a> {
 
 impl<'builder> DeviceBuilder<'builder> {
     pub fn physical_device_criteria<'a: 'builder>(
-        mut self,
-        criteria: PhysicalDeviceCriteria<'a>,
+        mut self, criteria: PhysicalDeviceCriteria<'a>,
     ) -> Self {
         self.physical_device_criteria = Some(criteria);
         self
     }
 
     pub unsafe fn create_device(
-        self,
-        instance: impl Borrow<ash::Instance>,
+        self, instance: impl Borrow<ash::Instance>,
     ) -> ash::prelude::VkResult<(ash::Device, DeviceMetadata)> {
         let instance: &ash::Instance = instance.borrow();
 
@@ -58,7 +55,8 @@ impl<'builder> DeviceBuilder<'builder> {
             return Err(vk::Result::ERROR_UNKNOWN);
         };
 
-        // SAFETY: each elements references the priority vec stored in physical_device_criteria[].queue_families.priorities
+        // SAFETY: each elements references the priority vec stored in
+        // physical_device_criteria[].queue_families.priorities
         let queues = physical_device_criteria
             .queue_families
             .iter()
@@ -103,9 +101,7 @@ pub struct DeviceMetadata {
 
 impl DeviceMetadata {
     pub unsafe fn get_device_queue(
-        &self,
-        device: impl Borrow<ash::Device>,
-        request: impl Borrow<QueueFamilyRequest>,
+        &self, device: impl Borrow<ash::Device>, request: impl Borrow<QueueFamilyRequest>,
         index: u32,
     ) -> ash::prelude::VkResult<(vk::Queue, u32)> {
         let device: &ash::Device = device.borrow();

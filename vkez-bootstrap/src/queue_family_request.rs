@@ -120,8 +120,7 @@ impl QueueFamilyRequest {
     }
 
     pub fn get_create_info(
-        &self,
-        queues: &[vk::QueueFamilyProperties],
+        &self, queues: &[vk::QueueFamilyProperties],
     ) -> Option<vk::DeviceQueueCreateInfoBuilder> {
         let Some(index) = self.choose_queue_family_index(queues) else {
             return None;

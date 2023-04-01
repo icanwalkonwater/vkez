@@ -2,14 +2,12 @@ use std::ffi::CStr;
 
 use ash::vk;
 use tracing::Level;
-use vkez_core::ash;
-use vkez_core::tracing;
+use vkez_core::{ash, tracing};
 
 pub unsafe extern "system" fn vkez_debug_utils_messenger(
     message_severity: vk::DebugUtilsMessageSeverityFlagsEXT,
     message_type: vk::DebugUtilsMessageTypeFlagsEXT,
-    p_callback_data: *const vk::DebugUtilsMessengerCallbackDataEXT,
-    _: *mut std::ffi::c_void,
+    p_callback_data: *const vk::DebugUtilsMessengerCallbackDataEXT, _: *mut std::ffi::c_void,
 ) -> vk::Bool32 {
     let enabled = match message_severity {
         vk::DebugUtilsMessageSeverityFlagsEXT::VERBOSE => tracing::event_enabled!(Level::TRACE),
