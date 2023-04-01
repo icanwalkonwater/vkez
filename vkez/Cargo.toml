@@ -14,4 +14,3 @@ vkez-macros = { path = "../vkez-macros" }
 
 tracing-subscriber = "0.3.16"
 eyre = "0.6.8"
-vk-mem = { git = "https://github.com/gwihlidal/vk-mem-rs", version = "0.2.3" }

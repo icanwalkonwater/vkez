@@ -3,9 +3,74 @@ use std::{ffi::CStr, mem, rc::Rc, slice::from_ref};
 use ash::{util::Align, vk};
 use tracing::Level;
 use vk_mem::Alloc;
-use vkez::ash;
-use vkez::bootstrap::{AshDeviceExt, AshInstanceExt, PhysicalDeviceCriteria, QueueFamilyRequest};
-use vkez::tracing;
+use vkez::{
+    ash,
+    bootstrap::{AshDeviceExt, AshInstanceExt, PhysicalDeviceCriteria, QueueFamilyRequest},
+    tracing, vk_mem,
+};
+use vkez_core::descriptor_sets::RawDescriptorSetInfo;
+
+pub mod my_shader_set {
+    use vkez::ash::vk;
+    use vkez::ash::vk::TaggedStructure;
+    use vkez_core::descriptor_sets::RawDescriptorSetInfo;
+
+    pub struct MyDescriptorSet;
+
+    unsafe impl RawDescriptorSetInfo for MyDescriptorSet {
+        const LAYOUT_BINDINGS_CREATE_INFO: &'static [vk::DescriptorSetLayoutBinding] = &[
+            vk::DescriptorSetLayoutBinding {
+                binding: 0,
+                descriptor_type: vk::DescriptorType::STORAGE_BUFFER,
+                descriptor_count: 1,
+                stage_flags: vk::ShaderStageFlags::COMPUTE,
+                p_immutable_samplers: std::ptr::null(),
+            },
+            vk::DescriptorSetLayoutBinding {
+                binding: 1,
+                descriptor_type: vk::DescriptorType::STORAGE_BUFFER,
+                descriptor_count: 1,
+                stage_flags: vk::ShaderStageFlags::COMPUTE,
+                p_immutable_samplers: std::ptr::null(),
+            },
+            vk::DescriptorSetLayoutBinding {
+                binding: 2,
+                descriptor_type: vk::DescriptorType::STORAGE_BUFFER,
+                descriptor_count: 1,
+                stage_flags: vk::ShaderStageFlags::COMPUTE,
+                p_immutable_samplers: std::ptr::null(),
+            },
+        ];
+
+        const LAYOUT_CREATE_INFO: vk::DescriptorSetLayoutCreateInfo =
+            vk::DescriptorSetLayoutCreateInfo {
+                s_type: vk::DescriptorSetLayoutCreateInfo::STRUCTURE_TYPE,
+                p_next: std::ptr::null_mut(),
+                flags: vk::DescriptorSetLayoutCreateFlags::empty(),
+                binding_count: Self::LAYOUT_BINDINGS_CREATE_INFO.len() as _,
+                p_bindings: Self::LAYOUT_BINDINGS_CREATE_INFO.as_ptr(),
+            };
+
+        const POOL_SIZES_FOR_ONE: &'static [vk::DescriptorPoolSize] = &[vk::DescriptorPoolSize {
+            ty: vk::DescriptorType::STORAGE_BUFFER,
+            descriptor_count: 3,
+        }];
+    }
+}
+
+// pub mod my_shader_set {
+//     #[derive(Shader)]
+//     #[shader(file = "./examples/add.comp.glsl")]
+//     #[shader(kind = "Compute")]
+//     struct MyComputeShader;
+
+//     #[derive(DescriptorSetFactory)]
+//     #[descriptor_set(from_shader = MyComputeShader)]
+//     pub struct MyDescriptorSet;
+// }
+
+#[vkez_macros::shader_module("./examples/add.comp.glsl", kind = "Compute")]
+pub mod compute_shader_module {}
 
 fn main() -> eyre::Result<()> {
     tracing_subscriber::fmt()
@@ -125,51 +190,17 @@ fn main() -> eyre::Result<()> {
         allocator.unmap_memory(&mut buffer_b.1);
     }
 
-    let descriptor_pool = unsafe {
-        device.create_descriptor_pool(
-            &vk::DescriptorPoolCreateInfo::builder()
-                .max_sets(1)
-                .pool_sizes(from_ref(
-                    &vk::DescriptorPoolSize::builder()
-                        .ty(vk::DescriptorType::STORAGE_BUFFER)
-                        .descriptor_count(3),
-                )),
-            None,
-        )?
-    };
+    let descriptor_pool =
+        unsafe { my_shader_set::MyDescriptorSet::create_pool_for_set(&device, 1)? };
 
-    let descriptor_set_layout = unsafe {
-        device.create_descriptor_set_layout(
-            &vk::DescriptorSetLayoutCreateInfo::builder().bindings(&[
-                vk::DescriptorSetLayoutBinding::builder()
-                    .binding(0)
-                    .descriptor_type(vk::DescriptorType::STORAGE_BUFFER)
-                    .descriptor_count(1)
-                    .stage_flags(vk::ShaderStageFlags::COMPUTE)
-                    .build(),
-                vk::DescriptorSetLayoutBinding::builder()
-                    .binding(1)
-                    .descriptor_type(vk::DescriptorType::STORAGE_BUFFER)
-                    .descriptor_count(1)
-                    .stage_flags(vk::ShaderStageFlags::COMPUTE)
-                    .build(),
-                vk::DescriptorSetLayoutBinding::builder()
-                    .binding(2)
-                    .descriptor_type(vk::DescriptorType::STORAGE_BUFFER)
-                    .descriptor_count(1)
-                    .stage_flags(vk::ShaderStageFlags::COMPUTE)
-                    .build(),
-            ]),
-            None,
-        )?
-    };
+    let descriptor_set_layout = unsafe { my_shader_set::MyDescriptorSet::create_layout(&device)? };
 
     let descriptor_set = unsafe {
-        device.allocate_descriptor_sets(
-            &vk::DescriptorSetAllocateInfo::builder()
-                .descriptor_pool(descriptor_pool)
-                .set_layouts(from_ref(&descriptor_set_layout)),
-        )?[0]
+        my_shader_set::MyDescriptorSet::allocate_one_set(
+            &device,
+            descriptor_pool,
+            descriptor_set_layout,
+        )?
     };
 
     unsafe {
@@ -212,52 +243,6 @@ fn main() -> eyre::Result<()> {
             &[],
         );
     }
-
-    pub mod desc_set {
-        use ash::vk::TaggedStructure;
-        use vkez::ash;
-
-        const LAYOUT_BINDINGS_CREATE_INFO: [ash::vk::DescriptorSetLayoutBinding; 0] = [];
-        const SET_CREATE_INFO: ash::vk::DescriptorSetLayoutCreateInfo =
-            ash::vk::DescriptorSetLayoutCreateInfo {
-                s_type: ash::vk::DescriptorSetLayoutCreateInfo::STRUCTURE_TYPE,
-                p_next: std::ptr::null(),
-                flags: ash::vk::DescriptorSetLayoutCreateFlags::empty(),
-                binding_count: LAYOUT_BINDINGS_CREATE_INFO.len() as _,
-                p_bindings: LAYOUT_BINDINGS_CREATE_INFO.as_ptr(),
-            };
-    }
-
-    // #[vkez_macros::shader_set]
-    // mod shader_set {
-    //     use ash::vk;
-
-    //     unsafe trait Shader {
-    //         const CODE: &'static [u32];
-    //         const ENTRY_POINT: &'static [u8];
-    //         const STAGES: vk::ShaderStageFlags;
-
-    //         fn shader_module_create_info() -> vk::ShaderModuleCreateInfo {
-    //             todo!()
-    //         }
-    //     }
-
-    //     unsafe trait DescriptorSet {}
-
-    //     struct MyComputeShader;
-
-    //     unsafe impl Shader for MyComputeShader {
-    //         const CODE: &'static [u32] = &[1, 2];
-    //         const ENTRY_POINT: &'static [u8] = b"main\0";
-    //         const STAGES: vk::ShaderStageFlags = vk::ShaderStageFlags::COMPUTE;
-    //     }
-
-    //     trait ComputeShader: Shader {}
-    //     impl ComputeShader for MyComputeShader {}
-    // }
-
-    #[vkez_macros::shader_module("./examples/add.comp.glsl", kind = "Compute")]
-    pub mod compute_shader_module {}
 
     let compute_shader = unsafe {
         device.create_shader_module(

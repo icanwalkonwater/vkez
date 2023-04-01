@@ -4,7 +4,7 @@ use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use proc_macro_error::{abort_if_dirty, emit_error, emit_warning, proc_macro_error};
 use quote::quote;
-use shaderc::ShaderKind;
+use shaderc::{CompileOptions, EnvVersion, ShaderKind};
 use structmeta::StructMeta;
 use syn::{parse_macro_input, parse_quote, ItemMod, LitStr};
 
@@ -43,6 +43,11 @@ fn shader_module_impl(
     item: ShaderModuleItem,
 ) -> Result<TokenStream2, TokenStream2> {
     let path = PathBuf::from(args.path.value());
+    let absolute_path = if path.is_absolute() {
+        path.clone()
+    } else {
+        std::env::current_dir().unwrap().join(&path)
+    };
 
     let shader_source = std::fs::read_to_string(&path);
     if let Err(e) = &shader_source {
@@ -68,6 +73,10 @@ fn shader_module_impl(
         .map(|e| e.value())
         .unwrap_or("main".to_string());
 
+    let mut compile_options = CompileOptions::new().unwrap();
+    compile_options.set_target_env(shaderc::TargetEnv::Vulkan, EnvVersion::Vulkan1_1 as _);
+    compile_options.set_optimization_level(shaderc::OptimizationLevel::Performance);
+
     let artifact = compiler
         .compile_into_spirv(
             &shader_source,
@@ -83,7 +92,14 @@ fn shader_module_impl(
 
     emit_warning!(&args.path, artifact.get_warning_messages());
 
-    let generated_module = gen_shader_module(&item, artifact.as_binary());
+
+    proc_macro_error::abort_if_dirty();
+
+    let generated_module = gen_shader_module(
+        &item,
+        &absolute_path.to_string_lossy(),
+        artifact.as_binary(),
+    );
     Ok(quote!(#generated_module))
 }
 
@@ -101,7 +117,7 @@ fn parse_shader_kind(kind: Option<&LitStr>) -> ShaderKind {
     }
 }
 
-fn gen_shader_module(original: &ItemMod, code: &[u32]) -> ItemMod {
+fn gen_shader_module(original: &ItemMod, path: &str, code: &[u32]) -> ItemMod {
     let attrs = &original.attrs;
     let vis = &original.vis;
     let ident = &original.ident;
@@ -111,6 +127,7 @@ fn gen_shader_module(original: &ItemMod, code: &[u32]) -> ItemMod {
     parse_quote! {
         #(#attrs)*
         #vis mod #ident {
+            const _: &'static str = include_str!(#path);
             pub const CODE: [u32; #code_len] = [#(#code),*];
         }
     }
