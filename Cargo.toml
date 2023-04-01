@@ -1,5 +1,7 @@
 [workspace]
 members = [
     "vkez",
+    "vkez-core",
+    "vkez-bootstrap",
     "vkez-macros",
 ]

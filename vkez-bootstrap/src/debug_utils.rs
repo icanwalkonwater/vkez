@@ -2,6 +2,8 @@ use std::ffi::CStr;
 
 use ash::vk;
 use tracing::Level;
+use vkez_core::ash;
+use vkez_core::tracing;
 
 pub unsafe extern "system" fn vkez_debug_utils_messenger(
     message_severity: vk::DebugUtilsMessageSeverityFlagsEXT,
@@ -85,7 +87,7 @@ pub unsafe extern "system" fn vkez_debug_utils_messenger(
 
     macro_rules! event_with_level {
         ($level:expr) => {
-            ::tracing::event!(
+            ::vkez_core::tracing::event!(
                 $level,
                 message,
                 ty = ?message_type,

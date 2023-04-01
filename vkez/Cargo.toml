@@ -4,13 +4,14 @@ version = "0.1.0"
 edition = "2021"
 
 [features]
-default = ["tracing"]
-tracing = ["dep:tracing"]
+default = ["bootstrap"]
+bootstrap = ["vkez-bootstrap"]
 
 [dependencies]
+vkez-core = { path = "../vkez-core" }
+vkez-bootstrap = { path = "../vkez-bootstrap", optional = true }
+vkez-macros = { path = "../vkez-macros" }
+
 tracing-subscriber = "0.3.16"
-tracing = { version = "0.1.37", optional = true }
 eyre = "0.6.8"
-ash = { version = "0.37.2", features = ["linked"] }
 vk-mem = { git = "https://github.com/gwihlidal/vk-mem-rs", version = "0.2.3" }
-vkez-macros = { version = "0.1.0", path = "../vkez-macros" }

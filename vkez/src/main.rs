@@ -3,7 +3,9 @@ use std::{ffi::CStr, mem, rc::Rc, slice::from_ref};
 use ash::{util::Align, vk};
 use tracing::Level;
 use vk_mem::Alloc;
+use vkez::ash;
 use vkez::bootstrap::{AshDeviceExt, AshInstanceExt, PhysicalDeviceCriteria, QueueFamilyRequest};
+use vkez::tracing;
 
 fn main() -> eyre::Result<()> {
     tracing_subscriber::fmt()
@@ -213,6 +215,7 @@ fn main() -> eyre::Result<()> {
 
     pub mod desc_set {
         use ash::vk::TaggedStructure;
+        use vkez::ash;
 
         const LAYOUT_BINDINGS_CREATE_INFO: [ash::vk::DescriptorSetLayoutBinding; 0] = [];
         const SET_CREATE_INFO: ash::vk::DescriptorSetLayoutCreateInfo =
@@ -224,6 +227,34 @@ fn main() -> eyre::Result<()> {
                 p_bindings: LAYOUT_BINDINGS_CREATE_INFO.as_ptr(),
             };
     }
+
+    // #[vkez_macros::shader_set]
+    // mod shader_set {
+    //     use ash::vk;
+
+    //     unsafe trait Shader {
+    //         const CODE: &'static [u32];
+    //         const ENTRY_POINT: &'static [u8];
+    //         const STAGES: vk::ShaderStageFlags;
+
+    //         fn shader_module_create_info() -> vk::ShaderModuleCreateInfo {
+    //             todo!()
+    //         }
+    //     }
+
+    //     unsafe trait DescriptorSet {}
+
+    //     struct MyComputeShader;
+
+    //     unsafe impl Shader for MyComputeShader {
+    //         const CODE: &'static [u32] = &[1, 2];
+    //         const ENTRY_POINT: &'static [u8] = b"main\0";
+    //         const STAGES: vk::ShaderStageFlags = vk::ShaderStageFlags::COMPUTE;
+    //     }
+
+    //     trait ComputeShader: Shader {}
+    //     impl ComputeShader for MyComputeShader {}
+    // }
 
     #[vkez_macros::shader_module("./examples/add.comp.glsl", kind = "Compute")]
     pub mod compute_shader_module {}
