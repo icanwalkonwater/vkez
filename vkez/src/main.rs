@@ -8,12 +8,28 @@ use vkez::{
     bootstrap::{AshDeviceExt, AshInstanceExt, PhysicalDeviceCriteria, QueueFamilyRequest},
     tracing, vk_mem,
 };
-use vkez_core::descriptor_sets::RawDescriptorSetInfo;
+use vkez_core::{descriptor_sets::RawDescriptorSetInfo, shaders::RawShaderInfo};
 
 pub mod my_shader_set {
+    use std::ffi::CStr;
+
     use vkez::ash::vk;
     use vkez::ash::vk::TaggedStructure;
     use vkez_core::descriptor_sets::RawDescriptorSetInfo;
+    use vkez_core::shaders::RawShaderInfo;
+
+    pub struct MyComputeShader;
+
+    unsafe impl RawShaderInfo for MyComputeShader {
+        const VIBE_CHECK: &'static str = "";
+        const CODE: &'static [u32] = &super::compute_shader_module::CODE;
+        const STAGE: vk::ShaderStageFlags = vk::ShaderStageFlags::COMPUTE;
+
+        fn entry_point() -> &'static std::ffi::CStr {
+            const NAME: &[u8] = b"main\0";
+            unsafe { CStr::from_ptr(NAME.as_ptr() as *const _) }
+        }
+    }
 
     pub struct MyDescriptorSet;
 
@@ -244,12 +260,7 @@ fn main() -> eyre::Result<()> {
         );
     }
 
-    let compute_shader = unsafe {
-        device.create_shader_module(
-            &vk::ShaderModuleCreateInfo::builder().code(&compute_shader_module::CODE),
-            None,
-        )?
-    };
+    let compute_shader = unsafe { my_shader_set::MyComputeShader::create_shader_module(&device)? };
 
     let compute_pipeline_layout = unsafe {
         device.create_pipeline_layout(
@@ -258,20 +269,15 @@ fn main() -> eyre::Result<()> {
         )?
     };
 
-    const ENTRY_POINT: &[u8] = b"main\0";
-
     let compute_pipeline = unsafe {
         device
             .create_compute_pipelines(
                 vk::PipelineCache::null(),
                 from_ref(
                     &vk::ComputePipelineCreateInfo::builder()
-                        .stage(
-                            *vk::PipelineShaderStageCreateInfo::builder()
-                                .name(CStr::from_ptr(ENTRY_POINT.as_ptr() as _))
-                                .stage(vk::ShaderStageFlags::COMPUTE)
-                                .module(compute_shader),
-                        )
+                        .stage(my_shader_set::MyComputeShader::pipeline_shader_stage_info(
+                            compute_shader,
+                        ))
                         .layout(compute_pipeline_layout),
                 ),
                 None,
