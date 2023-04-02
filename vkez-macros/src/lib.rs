@@ -6,7 +6,29 @@ use proc_macro_error::{abort_if_dirty, emit_error, emit_warning, proc_macro_erro
 use quote::quote;
 use shaderc::{CompileOptions, EnvVersion, ShaderKind};
 use structmeta::StructMeta;
-use syn::{parse_macro_input, parse_quote, ItemMod, LitStr};
+use syn::{parse_macro_input, parse_quote, visit_mut::visit_item_mod_mut, ItemMod, LitStr};
+
+use crate::shader_set::AccumulateShaderItemsVisitor;
+
+mod shader_set;
+
+#[proc_macro_error]
+#[proc_macro_attribute]
+pub fn shader_set(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    let mut item = parse_macro_input!(item as ItemMod);
+    let mut raw_attributes = AccumulateShaderItemsVisitor::default();
+    visit_item_mod_mut(&mut raw_attributes, &mut item);
+
+    for (shader, attributes) in &raw_attributes.shaders {
+        dbg!(shader, attributes);
+    }
+
+    for (set, attributes) in &raw_attributes.descriptor_sets {
+        dbg!(set, attributes);
+    }
+
+    todo!()
+}
 
 type ShaderModuleItem = ItemMod;
 
@@ -39,8 +61,7 @@ pub fn shader_module(attr: TokenStream, item: TokenStream) -> TokenStream {
 }
 
 fn shader_module_impl(
-    args: ShaderModuleArgs,
-    item: ShaderModuleItem,
+    args: ShaderModuleArgs, item: ShaderModuleItem,
 ) -> Result<TokenStream2, TokenStream2> {
     let path = PathBuf::from(args.path.value());
     let absolute_path = if path.is_absolute() {
@@ -83,7 +104,7 @@ fn shader_module_impl(
             shader_kind,
             &path.file_name().unwrap().to_string_lossy(),
             &entry_point,
-            None,
+            Some(&compile_options),
         )
         .map_err(|e| {
             syn::Error::new(args.path.span(), format!("Failed to compile shader: {e}"))

@@ -13,10 +13,8 @@ use vkez_core::{descriptor_sets::RawDescriptorSetInfo, shaders::RawShaderInfo};
 pub mod my_shader_set {
     use std::ffi::CStr;
 
-    use vkez::ash::vk;
-    use vkez::ash::vk::TaggedStructure;
-    use vkez_core::descriptor_sets::RawDescriptorSetInfo;
-    use vkez_core::shaders::RawShaderInfo;
+    use vkez::ash::{vk, vk::TaggedStructure};
+    use vkez_core::{descriptor_sets::RawDescriptorSetInfo, shaders::RawShaderInfo};
 
     pub struct MyComputeShader;
 
@@ -74,13 +72,11 @@ pub mod my_shader_set {
     }
 }
 
+// #[vkez_macros::shader_set]
 // pub mod my_shader_set {
-//     #[derive(Shader)]
-//     #[shader(file = "./examples/add.comp.glsl")]
-//     #[shader(kind = "Compute")]
-//     struct MyComputeShader;
+//     #[shader(file = "./examples/add.comp.glsl", kind = Compute)]
+//     pub struct MyComputeShader;
 
-//     #[derive(DescriptorSetFactory)]
 //     #[descriptor_set(from_shader = MyComputeShader)]
 //     pub struct MyDescriptorSet;
 // }

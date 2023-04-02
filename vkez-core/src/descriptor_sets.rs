@@ -1,8 +1,6 @@
-use std::borrow::Cow;
-use std::slice::from_ref;
+use std::{borrow::Cow, slice::from_ref};
 
-use ash::prelude::VkResult;
-use ash::vk;
+use ash::{prelude::VkResult, vk};
 
 fn pool_sizes_for_n<F: RawDescriptorSetInfo + ?Sized>(
     max_sets: u32,
@@ -29,8 +27,7 @@ pub unsafe trait RawDescriptorSetInfo {
     }
 
     unsafe fn create_pool_for_set(
-        device: &ash::Device,
-        max_sets: u32,
+        device: &ash::Device, max_sets: u32,
     ) -> VkResult<vk::DescriptorPool> {
         let max_sets = max_sets.max(1);
         let sizes = if max_sets == 1 {
@@ -48,9 +45,7 @@ pub unsafe trait RawDescriptorSetInfo {
     }
 
     unsafe fn allocate_one_set(
-        device: &ash::Device,
-        pool: vk::DescriptorPool,
-        layout: vk::DescriptorSetLayout,
+        device: &ash::Device, pool: vk::DescriptorPool, layout: vk::DescriptorSetLayout,
     ) -> VkResult<vk::DescriptorSet> {
         Ok(device.allocate_descriptor_sets(
             &vk::DescriptorSetAllocateInfo::builder()
